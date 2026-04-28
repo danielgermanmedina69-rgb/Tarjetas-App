@@ -1,0 +1,16 @@
+{
+  "name": "Control de Tarjeta Pro",
+  "short_name": "MiTarjeta",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#0f1419",
+  "theme_color": "#ff6b35",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/522/522591.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
