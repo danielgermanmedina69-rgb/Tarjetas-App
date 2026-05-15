@@ -1,0 +1,645 @@
+<!doctype html>
+<html lang="es" class="h-full">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Control de Tarjeta</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;600;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+html, body {
+  height: 100%;
+  background: #0f1419;
+  color: #e8eef5;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.font-display {
+  font-family: 'Fraunces', serif;
+}
+
+.app-wrapper {
+  min-height: 100%;
+  background:
+    radial-gradient(ellipse 80% 50% at 20% 0%, rgba(255, 107, 53, 0.15), transparent),
+    radial-gradient(ellipse 60% 50% at 100% 100%, rgba(255, 107, 53, 0.08), transparent),
+    #0f1419;
+}
+
+.card-surface {
+  background: #1a2028;
+  border: 1px solid rgba(255,255,255,0.06);
+  backdrop-filter: blur(12px);
+}
+
+.input-field {
+  background: #0f1419;
+  border: 1px solid rgba(255,255,255,0.08);
+  color: #fff;
+  transition: .2s;
+}
+
+.input-field:focus {
+  outline: none;
+  border-color: #ff6b35;
+  box-shadow: 0 0 0 3px rgba(255,107,53,.15);
+}
+
+.accent-btn {
+  background: linear-gradient(135deg, #ff6b35, #ff8c42);
+  color: #0f1419;
+  font-weight: 700;
+  transition: .2s;
+}
+
+.accent-btn:hover {
+  transform: translateY(-1px);
+}
+
+.month-nav-btn {
+  background: #11161d;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+.fade-in {
+  animation: fade .35s ease;
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.toast {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: #1a2028;
+  border: 1px solid rgba(255,255,255,0.08);
+  padding: 14px 18px;
+  border-radius: 14px;
+  z-index: 999;
+  animation: fade .25s ease;
+}
+
+.category-badge {
+  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.cat-General { background:#374151; }
+.cat-Hogar { background:#2563eb; }
+.cat-Comida { background:#16a34a; }
+.cat-Ocio { background:#9333ea; }
+.cat-Salud { background:#dc2626; }
+.cat-Servicios { background:#ca8a04; }
+
+canvas {
+  max-height: 300px;
+}
+</style>
+</head>
+
+<body class="h-full">
+
+<div id="login-screen" class="fixed inset-0 z-50 bg-[#0f1419] flex items-center justify-center px-4">
+  <div class="card-surface rounded-3xl p-8 w-full max-w-sm text-center">
+
+    <div class="w-20 h-20 rounded-3xl bg-[#ff6b35] mx-auto flex items-center justify-center mb-5 shadow-2xl shadow-orange-500/20">
+      <i data-lucide="shield-check" class="w-10 h-10 text-[#0f1419]"></i>
+    </div>
+
+    <h1 class="font-display text-4xl mb-2">Mi Tarjeta</h1>
+    <p class="text-sm text-gray-400 mb-6">Acceso protegido</p>
+
+    <input
+      id="login-password"
+      type="password"
+      placeholder="Ingresá tu contraseña"
+      class="input-field w-full rounded-2xl px-4 py-3 mb-4 text-center text-lg tracking-[4px]"
+    >
+
+    <button
+      onclick="login()"
+      class="accent-btn w-full rounded-2xl py-3"
+    >
+      Ingresar
+    </button>
+
+    <div id="login-error" class="text-red-500 text-sm mt-4 hidden">
+      Contraseña incorrecta
+    </div>
+
+  </div>
+</div>
+
+<div id="app-content" class="hidden">
+<div class="app-wrapper">
+<main class="max-w-7xl mx-auto px-4 py-8">
+
+<header class="mb-8 flex flex-wrap items-center justify-between gap-4">
+<div>
+<div class="flex items-center gap-3 mb-2">
+<div class="w-12 h-12 rounded-2xl bg-[#ff6b35] flex items-center justify-center shadow-lg shadow-orange-500/20">
+<i data-lucide="credit-card" class="w-6 h-6 text-[#0f1419]"></i>
+</div>
+<div>
+<div class="uppercase text-xs tracking-[4px] text-[#ff6b35]">Cloud Finance</div>
+<h1 class="font-display text-4xl font-bold text-white">Mi Tarjeta</h1>
+</div>
+</div>
+</div>
+
+<div class="flex gap-2">
+<button onclick="logout()" class="month-nav-btn px-4 py-2 rounded-xl flex items-center gap-2 text-red-400">
+<i data-lucide="log-out" class="w-4 h-4"></i>
+Salir
+</button>
+<button onclick="fetchData()" class="month-nav-btn px-4 py-2 rounded-xl flex items-center gap-2">
+<i data-lucide="refresh-cw" id="refresh-icon" class="w-4 h-4"></i>
+Actualizar
+</button>
+</div>
+</header>
+
+<section class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+<div class="card-surface rounded-2xl p-5">
+<div class="text-xs uppercase tracking-widest text-gray-400 mb-2">Total del mes</div>
+<div id="month-total" class="font-display text-4xl font-bold text-[#ff6b35]">$0</div>
+</div>
+
+<div class="card-surface rounded-2xl p-5">
+<div class="text-xs uppercase tracking-widest text-gray-400 mb-2">Cuotas activas</div>
+<div id="active-installments" class="font-display text-4xl font-bold">0</div>
+</div>
+
+<div class="card-surface rounded-2xl p-5">
+<div class="text-xs uppercase tracking-widest text-gray-400 mb-2">Deuda futura</div>
+<div id="remaining-debt" class="font-display text-4xl font-bold text-gray-300">$0</div>
+</div>
+
+<div class="card-surface rounded-2xl p-5">
+<div class="text-xs uppercase tracking-widest text-gray-400 mb-2">Movimientos</div>
+<div id="movement-count" class="font-display text-4xl font-bold">0</div>
+</div>
+</section>
+
+
+  <div id="current-month-label" class="font-display text-4xl text-[#ff6b35]"></div>
+</div>
+<div class="flex items-center justify-between flex-wrap gap-4">
+<div class="flex items-center gap-3">
+<button id="prev-month" class="month-nav-btn w-10 h-10 rounded-xl flex items-center justify-center">
+<i data-lucide="chevron-left"></i>
+</button>
+
+<div>
+<div class="text-xs uppercase tracking-widest text-gray-400">Navegar</div>
+<div class="font-display text-lg text-[#ff6b35]">Meses</div>
+</div>
+
+<button id="next-month" class="month-nav-btn w-10 h-10 rounded-xl flex items-center justify-center">
+<i data-lucide="chevron-right"></i>
+</button>
+</div>
+
+<button id="today-btn" class="month-nav-btn px-4 py-2 rounded-xl text-sm">
+Volver a hoy
+</button>
+</div>
+</section>
+
+<div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+
+<section class="lg:col-span-2 space-y-6">
+
+<div class="card-surface rounded-2xl p-6">
+<h2 class="font-display text-2xl mb-4 text-[#ff6b35] flex items-center gap-2">
+<i data-lucide="plus-circle"></i>
+Nuevo gasto
+</h2>
+
+<form id="expense-form" class="space-y-3">
+<input id="desc" type="text" required placeholder="Descripción" class="input-field w-full rounded-xl px-4 py-3">
+
+<div class="grid grid-cols-2 gap-3">
+<input id="amount" type="number" step="0.01" required placeholder="Monto" class="input-field rounded-xl px-4 py-3">
+<input id="installments" type="number" min="1" value="1" required class="input-field rounded-xl px-4 py-3">
+</div>
+
+<div class="grid grid-cols-2 gap-3">
+<input id="start-date" type="month" required class="input-field rounded-xl px-4 py-3">
+
+<select id="category" class="input-field rounded-xl px-4 py-3">
+<option>General</option>
+<option>Hogar</option>
+<option>Comida</option>
+<option>Ocio</option>
+<option>Salud</option>
+<option>Servicios</option>
+</select>
+</div>
+
+<button id="submit-btn" class="accent-btn w-full rounded-xl py-3">
+Guardar en la nube
+</button>
+</form>
+</div>
+
+<div class="card-surface rounded-2xl p-5">
+<div class="flex items-center justify-between mb-4">
+<h2 class="font-display text-xl">Gráfico mensual</h2>
+<i data-lucide="bar-chart-3" class="text-[#ff6b35]"></i>
+</div>
+<canvas id="monthlyChart"></canvas>
+</div>
+
+</section>
+
+<section class="lg:col-span-3">
+<div class="card-surface rounded-2xl p-6">
+
+<div class="flex flex-wrap gap-3 justify-between items-center mb-5">
+<h2 class="font-display text-2xl flex items-center gap-2">
+<i data-lucide="receipt" class="text-[#ff6b35]"></i>
+Movimientos
+</h2>
+
+<div class="flex gap-3 flex-wrap">
+<input id="search-input" type="text" placeholder="Buscar..." class="input-field rounded-xl px-4 py-2 text-sm">
+
+<select id="filter-category" class="input-field rounded-xl px-4 py-2 text-sm">
+<option value="">Todas</option>
+<option>General</option>
+<option>Hogar</option>
+<option>Comida</option>
+<option>Ocio</option>
+<option>Salud</option>
+<option>Servicios</option>
+</select>
+</div>
+</div>
+
+<div id="expenses-list" class="space-y-3"></div>
+
+</div>
+</section>
+
+</div>
+</main>
+</div>
+
+<script>
+const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwPFbcvOC0yAiSTC68SKiaJ6pMmYxwKqdkOF4Kcf27NhAT2pcrrNkooKQ3IS8hqqulr/exec';
+const APP_PASSWORD = '3693';
+
+let allExpenses = [];
+let viewDate = new Date();
+viewDate.setDate(1);
+
+let chart;
+
+function login() {
+  const pass = document.getElementById('login-password').value;
+  const error = document.getElementById('login-error');
+
+  if(pass === APP_PASSWORD) {
+
+    localStorage.setItem('tarjeta_auth', 'ok');
+
+    document.getElementById('login-screen').classList.add('hidden');
+    document.getElementById('app-content').classList.remove('hidden');
+
+    checkAuth();
+
+  } else {
+    error.classList.remove('hidden');
+    navigator.vibrate?.(200);
+  }
+}
+
+function logout() {
+  localStorage.removeItem('tarjeta_auth');
+  location.reload();
+}
+
+function checkAuth() {
+  const auth = localStorage.getItem('tarjeta_auth');
+
+  if(auth === 'ok') {
+    document.getElementById('login-screen').classList.add('hidden');
+    document.getElementById('app-content').classList.remove('hidden');
+    fetchData();
+  }
+}
+
+
+function showToast(text) {
+  const div = document.createElement('div');
+  div.className = 'toast';
+  div.innerText = text;
+  document.body.appendChild(div);
+
+  setTimeout(() => {
+    div.remove();
+  }, 2500);
+}
+
+async function fetchData() {
+  const icon = document.getElementById('refresh-icon');
+  icon.classList.add('animate-spin');
+
+  try {
+    const response = await fetch(WEB_APP_URL);
+    allExpenses = await response.json();
+
+    render();
+    updateChart();
+
+    showToast('Datos sincronizados');
+  } catch (e) {
+    console.error(e);
+    showToast('Error al sincronizar');
+  }
+
+  icon.classList.remove('animate-spin');
+}
+
+async function eliminarGasto(id) {
+  if(!confirm('¿Eliminar movimiento?')) return;
+
+  try {
+    await fetch(WEB_APP_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      body: JSON.stringify({
+        action: 'delete',
+        id
+      })
+    });
+
+    showToast('Movimiento eliminado');
+
+    setTimeout(fetchData, 1200);
+  } catch(e) {
+    showToast('Error al eliminar');
+  }
+}
+
+function render() {
+  const list = document.getElementById('expenses-list');
+  list.innerHTML = '';
+
+  const monthKey = viewDate.getFullYear() + '-' + String(viewDate.getMonth()+1).padStart(2, '0');
+
+  document.getElementById('current-month-label').innerText =
+    viewDate.toLocaleDateString('es-AR', {
+      month: 'long',
+      year: 'numeric'
+    });
+
+  const hoy = new Date();
+  const hoyKey = hoy.getFullYear() + '-' + String(hoy.getMonth()+1).padStart(2, '0');
+
+  let totalMes = 0;
+  let cuotasActivas = 0;
+  let deuda = 0;
+  let movimientos = 0;
+
+  const search = document.getElementById('search-input').value.toLowerCase();
+  const category = document.getElementById('filter-category').value;
+
+  allExpenses.forEach(g => {
+
+    if(!g.fecha_inicio) return;
+
+    const monto = parseFloat(g.monto || 0);
+    const cuotas = parseInt(g.cuotas || 1);
+
+    const [y,m] = g.fecha_inicio.split('-').map(Number);
+
+    const cuotaValor = monto / cuotas;
+
+    for(let i=0;i<cuotas;i++) {
+
+      const d = new Date(y, m-1+i, 1);
+
+      const k = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2, '0');
+
+      if(k === monthKey) {
+
+        if(search && !g.descripcion.toLowerCase().includes(search)) continue;
+        if(category && g.categoria !== category) continue;
+
+        totalMes += cuotaValor;
+        movimientos++;
+
+        if(cuotas > 1) cuotasActivas++;
+
+        list.innerHTML += `
+        <div class="fade-in bg-[#11161d] rounded-2xl p-4 border border-white/5 flex justify-between items-center gap-4">
+
+          <div class="flex items-center gap-4 min-w-0">
+
+            <button onclick="eliminarGasto(${g.id})" class="text-gray-500 hover:text-red-500 transition">
+              <i data-lucide="trash-2" class="w-4 h-4"></i>
+            </button>
+
+            <div class="min-w-0">
+              <div class="font-semibold truncate">${g.descripcion}</div>
+
+              <div class="flex gap-2 items-center mt-1 flex-wrap">
+                <div class="text-xs text-gray-400 uppercase">
+                  ${cuotas > 1 ? `Cuota ${i+1}/${cuotas}` : 'Pago único'}
+                </div>
+
+                <div class="category-badge cat-${g.categoria}">
+                  ${g.categoria}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="text-right">
+            <div class="font-bold text-xl text-[#ff6b35]">
+              $${cuotaValor.toFixed(2)}
+            </div>
+          </div>
+
+        </div>`;
+      }
+
+      if(k > hoyKey) {
+        deuda += cuotaValor;
+      }
+    }
+  });
+
+  if(list.innerHTML === '') {
+    list.innerHTML = `
+    <div class="text-center py-16 opacity-30 italic">
+      Sin movimientos este mes
+    </div>`;
+  }
+
+  document.getElementById('month-total').innerText = '$' + totalMes.toFixed(2);
+  document.getElementById('active-installments').innerText = cuotasActivas;
+  document.getElementById('remaining-debt').innerText = '$' + deuda.toFixed(2);
+  document.getElementById('movement-count').innerText = movimientos;
+
+  lucide.createIcons();
+}
+
+function updateChart() {
+
+  const totals = {};
+
+  allExpenses.forEach(g => {
+
+    if(!g.fecha_inicio) return;
+
+    const monto = parseFloat(g.monto || 0);
+    const cuotas = parseInt(g.cuotas || 1);
+
+    const cuotaValor = monto / cuotas;
+
+    const [y,m] = g.fecha_inicio.split('-').map(Number);
+
+    for(let i=0;i<cuotas;i++) {
+      const d = new Date(y, m-1+i, 1);
+
+      const key = d.toLocaleDateString('es-AR', {
+        month: 'short'
+      });
+
+      totals[key] = (totals[key] || 0) + cuotaValor;
+    }
+  });
+
+  const labels = Object.keys(totals);
+  const values = Object.values(totals);
+
+  const ctx = document.getElementById('monthlyChart');
+
+  if(chart) chart.destroy();
+
+  chart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Gastos',
+        data: values,
+        borderRadius: 12
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {
+          display: false
+        }
+      },
+      scales: {
+        x: {
+          ticks: {
+            color: '#ccc'
+          }
+        },
+        y: {
+          ticks: {
+            color: '#ccc'
+          }
+        }
+      }
+    }
+  });
+}
+
+
+document.getElementById('expense-form').onsubmit = async (e) => {
+  e.preventDefault();
+
+  const btn = document.getElementById('submit-btn');
+
+  btn.disabled = true;
+  btn.innerText = 'Guardando...';
+
+  const data = {
+    descripcion: document.getElementById('desc').value,
+    monto: parseFloat(document.getElementById('amount').value),
+    cuotas: parseInt(document.getElementById('installments').value),
+    fecha_inicio: document.getElementById('start-date').value,
+    categoria: document.getElementById('category').value
+  };
+
+  try {
+
+    await fetch(WEB_APP_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      body: JSON.stringify(data)
+    });
+
+    e.target.reset();
+
+    document.getElementById('start-date').value =
+      new Date().toISOString().substring(0,7);
+
+    showToast('Movimiento guardado');
+
+    setTimeout(fetchData, 1200);
+
+  } catch(e) {
+    showToast('Error al guardar');
+  }
+
+  btn.disabled = false;
+  btn.innerText = 'Guardar en la nube';
+};
+
+
+document.getElementById('prev-month').onclick = () => {
+  viewDate.setMonth(viewDate.getMonth()-1);
+  render();
+};
+
+document.getElementById('next-month').onclick = () => {
+  viewDate.setMonth(viewDate.getMonth()+1);
+  render();
+};
+
+document.getElementById('today-btn').onclick = () => {
+  viewDate = new Date();
+  viewDate.setDate(1);
+  render();
+};
+
+
+document.getElementById('search-input').addEventListener('input', render);
+document.getElementById('filter-category').addEventListener('change', render);
+
+
+document.getElementById('start-date').value =
+  new Date().toISOString().substring(0,7);
+
+fetchData();
+</script>
+
+</div>
+
+</body>
+</html>
